@@ -16,11 +16,16 @@ func NewTuple(length int) *Tuple {
 
 // Get returns the item at index i
 func (t Tuple) Get(i int) interface{} {
-	item := t.data[i]
-	return item
+	if len(t.data) > i {
+		item := t.data[i]
+		return item
+	}
+	return nil
 }
 
 // Set adds or replaces the item at index i
 func (t *Tuple) Set(i int, item interface{}) {
-	t.data[i] = item
+	if len(t.data) > i {
+		t.data[i] = item
+	}
 }
