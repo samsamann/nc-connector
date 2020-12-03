@@ -45,8 +45,34 @@ func TestLogError(t *testing.T) {
 	}
 	for _, test := range tests {
 		var buf bytes.Buffer
-		sut, _ := NewLogger(io.Writer(&buf), &Config{Level: &Level{l: test.level}, Format: &Format{s: test.format}})
+		sut, _ := NewLogger(io.Writer(&buf), &Config{Level: &Level{l: test.level}, Format: &Format{f: test.format}})
 		sut.Error(test.params...)
 		assert.Regexp(t, regexp.MustCompile(test.regexLogMsg), buf.String())
+	}
+}
+
+func TestLoggerCreationFailure(t *testing.T) {
+	tests := []struct {
+		level    logrus.Level
+		format   string
+		errorMsg string
+	}{
+		{
+			level:    111,
+			format:   "unknown",
+			errorMsg: "unsupported logger \"unknown\"",
+		},
+		{
+			errorMsg: "unsupported logger \"\"",
+		},
+		{
+			level:    logrus.DebugLevel,
+			errorMsg: "unsupported logger \"\"",
+		},
+	}
+	for _, test := range tests {
+		logger, err := NewLogger(nil, &Config{Level: &Level{l: test.level}, Format: &Format{f: test.format}})
+		assert.Nil(t, logger)
+		assert.EqualError(t, err, test.errorMsg)
 	}
 }

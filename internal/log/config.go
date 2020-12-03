@@ -5,6 +5,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	// DefaultLogLevel defines the default log level
+	DefaultLogLevel string = "info"
+	// DefaultLogFormat defines the default log format
+	DefaultLogFormat string = "logfmt"
+)
+
 // Level defines the minimal log level.
 type Level struct {
 	l logrus.Level
@@ -25,8 +32,10 @@ func (lv *Level) Set(s string) error {
 		lv.l = logrus.WarnLevel
 	case "error":
 		lv.l = logrus.ErrorLevel
+	case "":
+		return lv.Set(DefaultLogLevel)
 	default:
-		return errors.Errorf("unrecognized log level %q", s)
+		return errors.Errorf("unrecognized or unsupported log level %q", s)
 	}
 
 	return nil
@@ -34,20 +43,22 @@ func (lv *Level) Set(s string) error {
 
 // Format defines the log format.
 type Format struct {
-	s string
+	f string
 }
 
 func (f *Format) String() string {
-	return f.s
+	return f.f
 }
 
 // Set updates the value of the log format.
-func (f *Format) Set(s string) error {
-	switch s {
+func (f *Format) Set(format string) error {
+	switch format {
 	case "logfmt", "json":
-		f.s = s
+		f.f = format
+	case "":
+		return f.Set(DefaultLogFormat)
 	default:
-		return errors.Errorf("unrecognized log format %q", s)
+		return errors.Errorf("unrecognized log format %q", format)
 	}
 	return nil
 }

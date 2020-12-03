@@ -19,9 +19,9 @@ const (
 func AddFlags(a *kingpin.Application, config *Config) {
 	config.Level = &Level{}
 	a.Flag(LevelFlagName, LevelFlagHelp).
-		Default("info").SetValue(config.Level)
+		Default(DefaultLogLevel).SetValue(config.Level)
 
 	config.Format = &Format{}
 	a.Flag(FormatFlagName, FormatFlagHelp).
-		Default("logfmt").SetValue(config.Format)
+		Default(DefaultLogFormat).SetValue(config.Format)
 }
