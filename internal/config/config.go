@@ -28,7 +28,7 @@ func Load(s string) (*Config, error) {
 
 // Config is the top-level configuration.
 type Config struct {
-	GlobalConfig GlobalConfig `yaml:"global"`
+	GlobalConfig *GlobalConfig `yaml:"global"`
 }
 
 // GlobalConfig defines global variables that are used everywhere.
