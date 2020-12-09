@@ -9,6 +9,7 @@ import (
 )
 
 type mssqlSource struct {
+	db *sql.DB
 }
 
 // NewMssqlSource returns a new instance of mssqlSource.
@@ -21,6 +22,24 @@ func (ms mssqlSource) Import() <-chan pip.File {
 	defer close(channel)
 	processQueryResult(nil)
 	return channel
+}
+
+func (ms mssqlSource) execQuery(query string) (*sql.Rows, error) {
+	err := ms.db.Ping()
+	if err != nil {
+		return nil, err
+	}
+	stmt, err := ms.db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
 
 func prepareDataSQLQuery(query, idColumnName string) string {
@@ -62,7 +81,7 @@ func processQueryResult(rows *sql.Rows) []map[string]interface{} {
 		}
 
 		if err := rows.Scan(columnPointers...); err != nil {
-			// TODO: log and or continue
+			// TODO: log and/or continue
 		}
 		m := make(map[string]interface{})
 		for i, colName := range dbCols {

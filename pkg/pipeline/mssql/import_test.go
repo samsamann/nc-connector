@@ -1,6 +1,7 @@
 package mssql
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -53,6 +54,46 @@ func TestProcessQueryResult(t *testing.T) {
 		assert.Contains(t, resultMap[1], "id")
 		assert.Equal(t, resultMap[1]["id"], "foo")
 	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestExecQuery(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer db.Close()
+
+	query := "select 1;"
+	expectedErr := errors.New("can not prepare statement")
+	mock.ExpectPrepare(query).WillReturnError(expectedErr)
+
+	sut := new(mssqlSource)
+	sut.db = db
+
+	rows, err := sut.execQuery(query)
+	assert.Nil(t, rows)
+	assert.EqualError(t, err, expectedErr.Error())
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	query = "select 1 from foo;"
+	mock.ExpectPrepare(query).
+		ExpectQuery().
+		WillReturnRows(sqlmock.NewRows([]string{"mock"}).FromCSVString("1"))
+
+	sut = new(mssqlSource)
+	sut.db = db
+
+	rows, err = sut.execQuery(query)
+	assert.NotNil(t, rows)
+	assert.True(t, rows.Next())
+	assert.Nil(t, err)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
