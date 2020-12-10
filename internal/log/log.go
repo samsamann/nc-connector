@@ -26,9 +26,14 @@ func (l logger) With(key string, value interface{}) Logger {
 
 // Logger is the interface for loggers used in this program.
 type Logger interface {
-	Error(...interface{})
+	ReducedLogger
 
 	With(key string, value interface{}) Logger
+}
+
+// ReducedLogger is the interface for loggers with fewer functions.
+type ReducedLogger interface {
+	Error(...interface{})
 }
 
 // NewLogger returns a new instance of Logger.

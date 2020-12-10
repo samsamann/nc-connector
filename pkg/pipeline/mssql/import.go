@@ -17,11 +17,11 @@ func NewMssqlSource() pip.FileImporter {
 	return new(mssqlSource)
 }
 
-func (ms mssqlSource) Import() <-chan pip.File {
-	channel := make(chan pip.File)
-	defer close(channel)
+func (ms mssqlSource) Import(context pip.ImportContext, channel chan<- pip.FileData) pip.Done {
+	doneChan := make(chan struct{})
+	defer close(doneChan)
 	processQueryResult(nil)
-	return channel
+	return doneChan
 }
 
 func (ms mssqlSource) execQuery(query string) (*sql.Rows, error) {
