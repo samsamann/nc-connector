@@ -6,12 +6,26 @@ import (
 	"sync"
 	"time"
 
+	"github.com/samsamann/nc-connector/internal/config"
 	"github.com/samsamann/nc-connector/internal/log"
+	"github.com/samsamann/nc-connector/pkg/util"
 )
 
 type FilePipeline struct {
+	ctx    context.Context
+	logger log.Logger
+
 	source FileImporter
 	dest   FileExporter
+}
+
+func NewFilePipeline(rootCtx context.Context, logger log.Logger, options config.FilePipelineConfig) *FilePipeline {
+	source, err := GetFileImporter(options.Import.Name)
+	if err != nil {
+		logger.Error(err)
+		return nil
+	}
+	return &FilePipeline{ctx: rootCtx, logger: logger, source: source}
 }
 
 type filePipelineContext struct {
@@ -25,7 +39,11 @@ type filePipelineContext struct {
 }
 
 func (c filePipelineContext) Error(args ...interface{}) {
-	c.logger.Error(args...)
+	c.logger.With("caller", util.GetFuncName()).Error(args...)
+}
+
+func (c filePipelineContext) Report() {
+
 }
 
 func (c *filePipelineContext) SetTotalEntities(total uint) {
@@ -41,8 +59,12 @@ func (c *filePipelineContext) UpdateProcess(processed uint) {
 	c.processedEntites = processed
 }
 
-func newFilePipelineContext(logger log.Logger, timeout time.Duration) (*filePipelineContext, context.CancelFunc) {
-	ctx, cancelFunc := context.WithTimeout(context.Background(), timeout)
+func newFilePipelineContext(
+	ctx context.Context,
+	logger log.Logger,
+	timeout time.Duration,
+) (*filePipelineContext, context.CancelFunc) {
+	ctx, cancelFunc := context.WithTimeout(ctx, timeout)
 	return &filePipelineContext{
 			Context: ctx,
 			logger:  logger,
@@ -50,9 +72,10 @@ func newFilePipelineContext(logger log.Logger, timeout time.Duration) (*filePipe
 		cancelFunc
 }
 
-// Run runs
+// Run executes the defined pipeline
 func (p FilePipeline) Run() {
-	ctx, cancel := newFilePipelineContext(nil, 15*time.Minute)
+	//TODO: Make max. timeout configurable
+	ctx, cancel := newFilePipelineContext(p.ctx, p.logger, 15*time.Minute)
 	defer func() {
 		cancel()
 		if r := recover(); r != nil {
@@ -77,36 +100,27 @@ func importData(ctx ImportContext, wg *sync.WaitGroup, importer FileImporter) <-
 			close(channel)
 			wg.Done()
 		}()
-		done := importer.Import(ctx, channel)
-		select {
-		case <-ctx.Done():
-		case <-done:
-		}
+		ctx.Error(importer.Import(ctx, channel))
 	}()
 	return channel
 }
 
 func middleware(ctx Context, wg *sync.WaitGroup, manipulators []FileManipulator, input <-chan FileData) <-chan FileData {
 	channel := make(chan FileData)
-
 	go func() {
 		defer func() {
 			close(channel)
 			wg.Done()
 		}()
 		for {
-			select {
-			case <-ctx.Done():
+			data, ok := <-input
+			if !ok {
 				break
-			case data, ok := <-input:
-				if !ok {
-					break
-				}
+			}
 
-				for _, manipulator := range manipulators {
-					if manipulator.CanManipulate(ctx, data) {
-						channel <- manipulator.Manipulate(ctx, data)
-					}
+			for _, manipulator := range manipulators {
+				if manipulator.CanManipulate(ctx, data) {
+					channel <- manipulator.Manipulate(ctx, data)
 				}
 			}
 		}
@@ -118,11 +132,7 @@ func middleware(ctx Context, wg *sync.WaitGroup, manipulators []FileManipulator,
 func exportData(ctx ExportContext, wg *sync.WaitGroup, exporter FileExporter, input <-chan FileData) {
 	go func() {
 		defer wg.Done()
-		done := exporter.Export(ctx, input)
-		select {
-		case <-ctx.Done():
-		case <-done:
-		}
+		ctx.Error(exporter.Export(ctx, input))
 	}()
 }
 
@@ -139,7 +149,7 @@ func reporter(ctx Context, wg *sync.WaitGroup, interval time.Duration) {
 				ticker.Stop()
 				ok = false
 			case <-ticker.C:
-				// TODO: Log Info
+				ctx.Report()
 			}
 		}
 	}()

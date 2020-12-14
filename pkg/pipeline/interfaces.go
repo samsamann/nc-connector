@@ -6,12 +6,14 @@ import (
 	"github.com/samsamann/nc-connector/internal/log"
 )
 
-// Done is a read-only channel that indicates whether a pipeline element has done the job.
-type Done <-chan struct{}
+// Pipeline is the interface that wraps the concret pipeline struct.
+type Pipeline interface {
+	Run()
+}
 
 // FileImporter is the interface that wraps the Import method.
 type FileImporter interface {
-	Import(ImportContext, chan<- FileData) Done
+	Import(ImportContext, chan<- FileData) error
 }
 
 // FileManipulator is the interface that encapsulate the entire middleware processing.
@@ -22,7 +24,7 @@ type FileManipulator interface {
 
 // FileExporter is the interface that wraps the Export method.
 type FileExporter interface {
-	Export(ExportContext, <-chan FileData) Done
+	Export(ExportContext, <-chan FileData) error
 }
 
 // ManipulatorPrio defines processing priority.
@@ -41,6 +43,7 @@ const (
 type Context interface {
 	context.Context
 	log.ReducedLogger
+	Report()
 }
 
 type ImportContext interface {
