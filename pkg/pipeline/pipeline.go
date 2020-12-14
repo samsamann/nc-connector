@@ -20,7 +20,7 @@ type FilePipeline struct {
 }
 
 func NewFilePipeline(rootCtx context.Context, logger log.Logger, options config.FilePipelineConfig) *FilePipeline {
-	source, err := GetFileImporter(options.Import.Name)
+	source, err := GetFileImporter(options.Import.Name, options.Import.Options)
 	if err != nil {
 		logger.Error(err)
 		return nil
@@ -100,6 +100,11 @@ func importData(ctx ImportContext, wg *sync.WaitGroup, importer FileImporter) <-
 			close(channel)
 			wg.Done()
 		}()
+		err := importer.Connect()
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
 		ctx.Error(importer.Import(ctx, channel))
 	}()
 	return channel

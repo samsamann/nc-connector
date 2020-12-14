@@ -13,6 +13,7 @@ type Pipeline interface {
 
 // FileImporter is the interface that wraps the Import method.
 type FileImporter interface {
+	Connect() error
 	Import(ImportContext, chan<- FileData) error
 }
 

@@ -5,23 +5,21 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/samsamann/nc-connector/pkg/pipeline"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestQueryCreation(t *testing.T) {
 	tests := []struct {
 		subSQLQuery    string
-		idColumnName   string
 		expectedResult string
 	}{
 		{
 			subSQLQuery:    "select 1",
-			idColumnName:   "id",
-			expectedResult: "select file_data.id, file_data.* from (select 1) as file_data;",
+			expectedResult: "select file_data.* from (select 1) as file_data;",
 		},
 		{
-			idColumnName:   "id_col",
-			expectedResult: "select file_data.id_col, file_data.* from (select 1 as id_col) as file_data;",
+			expectedResult: "select file_data.* from (select 1) as file_data;",
 		},
 	}
 
@@ -29,7 +27,7 @@ func TestQueryCreation(t *testing.T) {
 		assert.Equal(
 			t,
 			test.expectedResult,
-			prepareDataSQLQuery(test.subSQLQuery, test.idColumnName),
+			prepareDataSQLQuery(test.subSQLQuery),
 		)
 	}
 }
@@ -47,14 +45,13 @@ func TestProcessQueryResult(t *testing.T) {
 		RowsWillBeClosed()
 	rows, _ := db.Query("select 1 as id from;")
 
-	resultMap := processQueryResult(rows)
-	if assert.Len(t, resultMap, 2) {
-		assert.Contains(t, resultMap[0], "id")
-		assert.Equal(t, resultMap[0]["id"], 1)
-		assert.Contains(t, resultMap[1], "id")
-		assert.Equal(t, resultMap[1]["id"], "foo")
-	}
-
+	processQueryResult(
+		rows,
+		func(c chan<- pipeline.FileData, resultMap map[string]interface{}) {
+			assert.Contains(t, resultMap, "id")
+		},
+		nil,
+	)
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}

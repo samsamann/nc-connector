@@ -3,25 +3,50 @@ package mssql
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
 	"strconv"
 
+	mssql "github.com/denisenkom/go-mssqldb"
 	pip "github.com/samsamann/nc-connector/pkg/pipeline"
 )
 
+func init() {
+	pip.RegisterFileImporter("mssqlSource", NewMssqlSource)
+}
+
+type processResultFunc func(chan<- pip.FileData, map[string]interface{})
+
 type mssqlSource struct {
-	db *sql.DB
+	query string
+	cURL  *url.URL
+	db    *sql.DB
 }
 
 // NewMssqlSource returns a new instance of mssqlSource.
-func NewMssqlSource() pip.FileImporter {
-	return new(mssqlSource)
+func NewMssqlSource(config map[string]interface{}) pip.FileImporter {
+	return &mssqlSource{query: config["query"].(string), cURL: newURL(config)}
 }
 
-func (ms mssqlSource) Import(context pip.ImportContext, channel chan<- pip.FileData) pip.Done {
-	doneChan := make(chan struct{})
-	defer close(doneChan)
-	processQueryResult(nil)
-	return doneChan
+func (ms *mssqlSource) Connect() error {
+	connector, err := mssql.NewConnector(ms.cURL.String())
+	if err != nil {
+		return err
+	}
+	ms.db = sql.OpenDB(connector)
+	return nil
+}
+
+func (ms mssqlSource) Import(context pip.ImportContext, channel chan<- pip.FileData) error {
+	rows, err := ms.execQuery(prepareDataSQLQuery(ms.query))
+	if err != nil {
+		return err
+	}
+	processQueryResult(
+		rows,
+		createFile,
+		channel,
+	)
+	return nil
 }
 
 func (ms mssqlSource) execQuery(query string) (*sql.Rows, error) {
@@ -42,33 +67,37 @@ func (ms mssqlSource) execQuery(query string) (*sql.Rows, error) {
 	return rows, nil
 }
 
-func prepareDataSQLQuery(query, idColumnName string) string {
+func newURL(config map[string]interface{}) *url.URL {
+	return &url.URL{
+		Scheme: "sqlserver",
+		User:   url.UserPassword(config["username"].(string), config["password"].(string)),
+		Host:   fmt.Sprintf("%s/%s", config["hostname"], config["instance"]),
+	}
+}
+
+func prepareDataSQLQuery(query string) string {
 	return prepareSQLQuery(
-		"select file_data.%s, file_data.* from (%s) as file_data;",
+		"select file_data.* from (%s) as file_data;",
 		query,
-		idColumnName,
 	)
 }
 
 func prepareCountSQLQuery(query, idColumnName string) string {
 	return prepareSQLQuery(
-		"select count(file_data.%s) from (%s) as file_data;",
+		"select count(*) as count from (%s) as file_data;",
 		query,
-		idColumnName,
 	)
 }
 
-func prepareSQLQuery(mainQuery, subQuery, idColumnName string) string {
+func prepareSQLQuery(mainQuery, subQuery string) string {
 	if subQuery == "" {
-		subQuery = fmt.Sprintf("select 1 as %s", idColumnName)
+		subQuery = fmt.Sprintf("select 1")
 	}
-	return fmt.Sprintf(mainQuery, idColumnName, subQuery)
+	return fmt.Sprintf(mainQuery, subQuery)
 }
 
-func processQueryResult(rows *sql.Rows) []map[string]interface{} {
+func processQueryResult(rows *sql.Rows, processResult processResultFunc, channel chan<- pip.FileData) {
 	defer rows.Close()
-
-	result := make([]map[string]interface{}, 0)
 
 	hasRow := rows.Next()
 	dbCols, _ := rows.Columns()
@@ -96,9 +125,12 @@ func processQueryResult(rows *sql.Rows) []map[string]interface{} {
 				m[colName] = val
 			}
 		}
-		result = append(result, m)
+		processResult(channel, m)
 
 		hasRow = rows.Next()
 	}
-	return result
+}
+
+func createFile(channel chan<- pip.FileData, result map[string]interface{}) {
+	channel <- &pip.File{Name: result["name"].(string)}
 }
