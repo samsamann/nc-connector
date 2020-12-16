@@ -24,7 +24,7 @@ type mssqlSource struct {
 
 // NewMssqlSource returns a new instance of mssqlSource.
 func NewMssqlSource(config map[string]interface{}) pip.FileImporter {
-	return &mssqlSource{query: config["query"].(string), cURL: newURL(config)}
+	return &mssqlSource{query: "", cURL: newURL(config)}
 }
 
 func (ms *mssqlSource) Connect() error {
@@ -68,10 +68,9 @@ func (ms mssqlSource) execQuery(query string) (*sql.Rows, error) {
 }
 
 func newURL(config map[string]interface{}) *url.URL {
+	//TODO: Create URL
 	return &url.URL{
 		Scheme: "sqlserver",
-		User:   url.UserPassword(config["username"].(string), config["password"].(string)),
-		Host:   fmt.Sprintf("%s/%s", config["hostname"], config["instance"]),
 	}
 }
 

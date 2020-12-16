@@ -77,8 +77,8 @@ func (p FilePipeline) Run() {
 	//TODO: Make max. timeout configurable
 	ctx, cancel := newFilePipelineContext(p.ctx, p.logger, 15*time.Minute)
 	defer func() {
-		cancel()
 		if r := recover(); r != nil {
+			cancel()
 			// TODO: Log msg
 			fmt.Printf("Recovering from panic. error is: %v \n", r)
 		}
@@ -88,7 +88,7 @@ func (p FilePipeline) Run() {
 	wg.Add(4)
 	importChan := importData(ctx, &wg, p.source)
 	exportChan := middleware(ctx, &wg, []FileManipulator{}, importChan)
-	exportData(ctx, &wg, p.dest, exportChan)
+	exportData(ctx, &wg, p.dest, exportChan, cancel)
 	reporter(ctx, &wg, 5*time.Second)
 	wg.Wait()
 }
@@ -105,7 +105,9 @@ func importData(ctx ImportContext, wg *sync.WaitGroup, importer FileImporter) <-
 			ctx.Error(err)
 			return
 		}
-		ctx.Error(importer.Import(ctx, channel))
+		if importer != nil {
+			ctx.Error(importer.Import(ctx, channel))
+		}
 	}()
 	return channel
 }
@@ -134,10 +136,15 @@ func middleware(ctx Context, wg *sync.WaitGroup, manipulators []FileManipulator,
 	return channel
 }
 
-func exportData(ctx ExportContext, wg *sync.WaitGroup, exporter FileExporter, input <-chan FileData) {
+func exportData(ctx ExportContext, wg *sync.WaitGroup, exporter FileExporter, input <-chan FileData, cancel context.CancelFunc) {
 	go func() {
-		defer wg.Done()
-		ctx.Error(exporter.Export(ctx, input))
+		defer func() {
+			cancel()
+			wg.Done()
+		}()
+		if exporter != nil {
+			ctx.Error(exporter.Export(ctx, input))
+		}
 	}()
 }
 
