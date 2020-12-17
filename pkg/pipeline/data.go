@@ -8,3 +8,8 @@ type FileData interface {
 type File struct {
 	Name string
 }
+
+// Folder represents a folder.
+type Folder struct {
+	Name string
+}
