@@ -1,16 +1,15 @@
 package stream
 
 type linker interface {
-	next() linker
+	prev() linker
+	element() interface{}
 }
 
 type Inlet interface {
-	// linker
 	In() chan<- SyncItem
 }
 
 type Outlet interface {
-	//linker
 	Out() <-chan SyncItem
 }
 
@@ -21,8 +20,6 @@ type Producer interface {
 type Operator interface {
 	Inlet
 	Outlet
-	// Via(Operator) Operator
-	// To(Consumer)
 }
 
 type Consumer interface {
@@ -30,21 +27,12 @@ type Consumer interface {
 }
 
 type Flow interface {
+	linker
 	Via(Operator) Flow
-	To(Consumer)
-}
-type operatorLink struct {
-	opt Operator
+	To(Consumer) Pipeline
 }
 
-/*func newFlowElement(pipeline *Pipeline) Flow {
-	return new(flowImpl)
+type Pipeline interface {
+	linker
+	Start()
 }
-
-func (f flowImpl) Via(Operator) Flow {
-	return newFlowElement(nil)
-}
-
-func (f flowImpl) To(Consumer) {
-
-}*/
