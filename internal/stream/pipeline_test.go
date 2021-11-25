@@ -49,18 +49,7 @@ func (s stubProducer) Out() <-chan SyncItem {
 	return c
 }
 
-func TestPipeline(t *testing.T) {
+func TestPipelineWithProducerAndConsumer(t *testing.T) {
 	pip := NewStreamWithoutMiddleware(&stubProducer{}, &stubConsumer{})
 	pip.Start()
 }
-
-/*func TestIsPipelineOK(t *testing.T) {
-	consumer := new(stubConsumer)
-	producer1 := stubProducer{stubConsumer: stubConsumer{nextItem: consumer}}
-	producer2 := stubProducer{stubConsumer: stubConsumer{nextItem: producer1}}
-
-	assert.True(t, isPipelineOK(producer2))
-	assert.True(t, isPipelineOK(producer1))
-	assert.False(t, isPipelineOK(consumer))
-	assert.False(t, isPipelineOK(nil))
-}*/

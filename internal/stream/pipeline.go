@@ -48,34 +48,23 @@ func (p *pipeline) Start() {
 	} else {
 		return
 	}
-
-	var wg sync.WaitGroup
-	wg.Add(len(operators) + 1)
-	var outlet Outlet = producer
-	for _, o := range operators {
-		go func() {
-			defer wg.Done()
-			transmit(o, outlet)
-		}()
-		outlet = o
-	}
-	go func() {
-		defer wg.Done()
-		transmit(consumer, outlet)
-	}()
-	wg.Wait()
+	execPipeline(producer, operators, consumer)
 }
 
-/*func isPipelineOK(item linker) bool {
-	if item == nil {
-		return false
+func execPipeline(p Producer, ops []Operator, c Consumer) {
+	var wg sync.WaitGroup
+	wg.Add(len(ops) + 1)
+
+	exec := func(i Inlet, o Outlet) {
+		defer wg.Done()
+		transmit(i, o)
 	}
-	nextItem := item.next()
-	for nextItem != nil {
-		if _, ok := nextItem.(Consumer); ok && nextItem.next() == nil {
-			return true
-		}
-		nextItem = nextItem.next()
+
+	var outlet Outlet = p
+	for _, operator := range ops {
+		go exec(operator, outlet)
+		outlet = operator
 	}
-	return false
-}*/
+	go exec(c, outlet)
+	wg.Wait()
+}
