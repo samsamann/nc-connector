@@ -14,7 +14,7 @@ func init() {
 	operatorRegistry = make(map[string]InitOperatorFunc)
 }
 
-func CreateOperator(name string) (stream.Operator, error) {
+func CreateOperator(name string, config map[string]interface{}) (stream.Operator, error) {
 	if f, ok := operatorRegistry[name]; ok {
 		return f()
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/samsamann/nc-connector/internal/stream"
 )
 
-type InitProducerFunc func() (stream.Producer, error)
+type InitProducerFunc func(map[string]interface{}) (stream.Producer, error)
 
 var producerRegistry map[string]InitProducerFunc
 
@@ -15,9 +15,9 @@ func init() {
 	producerRegistry[mssqlProducer] = initMssqlProducer
 }
 
-func CreateProducer(name string) (stream.Producer, error) {
+func CreateProducer(name string, config map[string]interface{}) (stream.Producer, error) {
 	if f, ok := producerRegistry[name]; ok {
-		return f()
+		return f(config)
 	}
 	return nil, fmt.Errorf("no producer found with name %q", name)
 }

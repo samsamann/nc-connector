@@ -15,7 +15,7 @@ func init() {
 	consumerRegistry[stubConsumerName] = initStubConsumer
 }
 
-func CreateConsumer(name string) (stream.Consumer, error) {
+func CreateConsumer(name string, config map[string]interface{}) (stream.Consumer, error) {
 	if f, ok := consumerRegistry[name]; ok {
 		return f()
 	}
