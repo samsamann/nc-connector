@@ -18,7 +18,3 @@ func TestTuple(t *testing.T) {
 	sut.Set(1010, "not set")
 	assert.Nil(t, sut.Get(1010))
 }
-
-func TestGetCaller(t *testing.T) {
-	assert.Equal(t, "github.com/samsamann/nc-connector/pkg/util.TestGetCaller", GetFuncName())
-}
