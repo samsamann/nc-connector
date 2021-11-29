@@ -22,3 +22,6 @@
 
 # Local History for Visual Studio Code
 .history/
+
+# Local dev files
+dev_config.yaml
