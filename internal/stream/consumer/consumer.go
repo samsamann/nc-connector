@@ -12,6 +12,7 @@ var consumerRegistry map[string]InitConsumerFunc
 
 func init() {
 	consumerRegistry = make(map[string]InitConsumerFunc)
+	consumerRegistry[stubConsumerName] = initStubConsumer
 }
 
 func CreateConsumer(name string) (stream.Consumer, error) {
