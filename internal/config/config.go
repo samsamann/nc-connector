@@ -28,9 +28,23 @@ func Load(s string) (*Config, error) {
 
 // Config is the top-level configuration.
 type Config struct {
-	GlobalConfig *GlobalConfig `yaml:"global"`
+	GlobalConfig GlobalConfig   `yaml:"global"`
+	Pipeline     PipelineConfig `yaml:"pipeline"`
 }
 
 // GlobalConfig defines global variables that are used everywhere.
 type GlobalConfig struct {
 }
+
+type PipelineConfig struct {
+	Producer   StreamElem   `yaml:"producer"`
+	Middleware []StreamElem `yaml:"middleware"`
+	Consumer   StreamElem   `yaml:"consumer"`
+}
+
+type StreamElem struct {
+	Name   string           `yaml:"name"`
+	Config StreamElemConfig `yaml:",inline"`
+}
+
+type StreamElemConfig map[string]interface{}

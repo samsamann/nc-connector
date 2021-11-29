@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func TestYamlParsing(t *testing.T) {
+func TestGlobalYamlParsing(t *testing.T) {
 	tests := []struct {
 		content        string
 		expectErrType  interface{}
@@ -54,4 +54,17 @@ func TestYamlParsing(t *testing.T) {
 		}
 		assert.Equal(t, test.expectedConfig, config)
 	}
+}
+
+func TestPipelineConfigParsing(t *testing.T) {
+	baseContent := `
+pipeline:
+  producer:
+    test:
+      conf: 123
+      test: foo
+`
+	config, err := Load(baseContent)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, config)
 }
