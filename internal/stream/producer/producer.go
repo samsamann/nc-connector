@@ -12,7 +12,7 @@ var producerRegistry map[string]InitProducerFunc
 
 func init() {
 	producerRegistry = make(map[string]InitProducerFunc)
-	producerRegistry[mssqlProducer] = initMssqlProducer
+	producerRegistry[mssqlProducerName] = initMssqlProducer
 }
 
 func CreateProducer(name string, config map[string]interface{}) (stream.Producer, error) {

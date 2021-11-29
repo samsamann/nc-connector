@@ -4,7 +4,7 @@ func NewStream(producer Producer) Flow {
 	return newFlowElement(producer, nil)
 }
 func NewStreamWithoutMiddleware(producer Producer, consumer Consumer) Pipeline {
-	return newFlowElement(producer, nil).To(consumer)
+	return NewStream(producer).To(consumer)
 }
 
 type flow struct {
