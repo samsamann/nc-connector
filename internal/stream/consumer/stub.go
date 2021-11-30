@@ -8,7 +8,7 @@ const (
 	stubConsumerName = "stub"
 )
 
-func initStubConsumer() (stream.Consumer, error) {
+func initStubConsumer(map[string]interface{}) (stream.Consumer, error) {
 	return &stubConsumer{}, nil
 }
 

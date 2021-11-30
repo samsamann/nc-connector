@@ -6,7 +6,7 @@ import (
 	"github.com/samsamann/nc-connector/internal/stream"
 )
 
-type InitOperatorFunc func() (stream.Operator, error)
+type InitOperatorFunc func(map[string]interface{}) (stream.Operator, error)
 
 var operatorRegistry map[string]InitOperatorFunc
 
@@ -16,7 +16,7 @@ func init() {
 
 func CreateOperator(name string, config map[string]interface{}) (stream.Operator, error) {
 	if f, ok := operatorRegistry[name]; ok {
-		return f()
+		return f(config)
 	}
 	return nil, fmt.Errorf("no operator found with name %q", name)
 }

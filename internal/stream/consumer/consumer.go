@@ -6,7 +6,7 @@ import (
 	"github.com/samsamann/nc-connector/internal/stream"
 )
 
-type InitConsumerFunc func() (stream.Consumer, error)
+type InitConsumerFunc func(map[string]interface{}) (stream.Consumer, error)
 
 var consumerRegistry map[string]InitConsumerFunc
 
@@ -17,7 +17,7 @@ func init() {
 
 func CreateConsumer(name string, config map[string]interface{}) (stream.Consumer, error) {
 	if f, ok := consumerRegistry[name]; ok {
-		return f()
+		return f(config)
 	}
 	return nil, fmt.Errorf("no consumer found with name %q", name)
 }
