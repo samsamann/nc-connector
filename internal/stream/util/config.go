@@ -31,6 +31,7 @@ func (m *ConfigMap) Error() error {
 type ConfigValidator interface {
 	Required() ConfigValidator
 	String() string
+	StringWithDefault(string) string
 	Map() map[string]string
 }
 
@@ -57,6 +58,14 @@ func (meta *validationMetadata) String() string {
 	meta.configMap.errs =
 		append(meta.configMap.errs, errors.New("value must be a string"))
 	return ""
+}
+
+func (meta *validationMetadata) StringWithDefault(str string) string {
+	meta.required = false
+	if ret := meta.String(); len(ret) != 0 {
+		return ret
+	}
+	return str
 }
 
 func (meta *validationMetadata) Map() map[string]string {

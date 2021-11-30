@@ -13,6 +13,7 @@ var consumerRegistry map[string]InitConsumerFunc
 func init() {
 	consumerRegistry = make(map[string]InitConsumerFunc)
 	consumerRegistry[stubConsumerName] = initStubConsumer
+	consumerRegistry[webdavConsumerName] = initWebdavConsumer
 }
 
 func CreateConsumer(name string, config map[string]interface{}) (stream.Consumer, error) {
