@@ -22,10 +22,10 @@ func (p Properties) Get() {
 
 }
 
-func NewFileSyncItem(path string, content []byte) SyncItem {
+func NewFileSyncItem(path string, props Properties, content []byte) SyncItem {
 	return &file{
 		path:    path,
-		attrs:   make(Properties),
+		attrs:   props,
 		content: bytes.NewReader(content),
 	}
 }

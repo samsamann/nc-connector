@@ -2,6 +2,7 @@ package producer
 
 import (
 	"database/sql"
+	"fmt"
 	"net/url"
 
 	_ "github.com/denisenkom/go-mssqldb"
@@ -15,13 +16,16 @@ const (
 )
 
 const (
-	mssqlHostCName     = "host"
-	mssqlInstanceCName = "instance"
-	mssqlDatabaseCName = "database"
-	mssqlUserCName     = "username"
-	mssqlPasswordCName = "password"
-	mssqlQueryCName    = "query"
-	mssqlParamsCName   = "params"
+	mssqlHostCName           = "host"
+	mssqlInstanceCName       = "instance"
+	mssqlDatabaseCName       = "database"
+	mssqlUserCName           = "username"
+	mssqlPasswordCName       = "password"
+	mssqlQueryCName          = "query"
+	mssqlParamsCName         = "params"
+	mssqlMappingCName        = "mapping"
+	mssqlMappingContentCName = "content"
+	mssqlMappingPathCName    = "path"
 
 	mssqlAppNameParam   = "app name"
 	mssqlDefaultAppName = "nc-connector"
@@ -66,15 +70,42 @@ func (ms mssqlProducer) Out() <-chan stream.SyncItem {
 }
 
 func (ms mssqlProducer) process(channel chan<- stream.SyncItem, rows *sql.Rows) {
+	cols, _ := rows.Columns()
 	for rows.Next() {
+		columns := make([]interface{}, len(cols))
+		columnPointers := make([]interface{}, len(cols))
+		for i := range columns {
+			columnPointers[i] = &columns[i]
+		}
+		if err := rows.Scan(columnPointers...); err != nil {
+			rows.Close()
+			return
+		}
 
+		m := make(map[string]interface{})
+		for i, colName := range cols {
+			val := columnPointers[i].(*interface{})
+			m[colName] = *val
+		}
+		// TODO: ckeck error
+		path := m[ms.config.mapping[mssqlMappingPathCName]].(string)
+		content := m[ms.config.mapping[mssqlMappingContentCName]].([]byte)
+		delete(m, ms.config.mapping[mssqlMappingPathCName])
+		delete(m, ms.config.mapping[mssqlMappingContentCName])
+
+		props := make(stream.Properties)
+		for k, v := range m {
+			props[k] = v
+		}
+
+		channel <- stream.NewFileSyncItem(path, props, content)
 	}
 }
 
 type mssqlConfig struct {
 	connURL *url.URL
 	query   string
-	mapping interface{}
+	mapping map[string]string
 }
 
 func processConfig(config *util.ConfigMap) (mssqlConfig, error) {
@@ -85,8 +116,20 @@ func processConfig(config *util.ConfigMap) (mssqlConfig, error) {
 	password := config.Get(mssqlPasswordCName).String()
 	query := config.Get(mssqlQueryCName).Required().String()
 	connParams := config.Get(mssqlParamsCName).Map()
+	mapping := config.Get(mssqlMappingCName).Required().Map()
 	if err := config.Error(); err != nil {
 		return mssqlConfig{}, err
+	}
+
+	p, pathExists := mapping[mssqlMappingPathCName]
+	c, contentExists := mapping[mssqlMappingContentCName]
+	if !pathExists || len(p) == 0 || !contentExists || len(c) == 0 {
+		return mssqlConfig{},
+			fmt.Errorf(
+				"%q and %q do not exist or must not be empty in the mapping conf",
+				mssqlMappingPathCName,
+				mssqlMappingContentCName,
+			)
 	}
 
 	urlQuery := make(url.Values)
@@ -108,6 +151,7 @@ func processConfig(config *util.ConfigMap) (mssqlConfig, error) {
 	return mssqlConfig{
 		connURL: u,
 		query:   query,
+		mapping: mapping,
 	}, nil
 }
 
