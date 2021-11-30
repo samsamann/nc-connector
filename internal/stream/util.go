@@ -27,12 +27,9 @@ func getAllOperators(link linker) []Operator {
 }
 
 func transmit(i Inlet, o Outlet) {
-	defer close(i.In())
+	inletChan := i.In()
+	defer close(inletChan)
 	for ele := range o.Out() {
-		i.In() <- ele
+		inletChan <- ele
 	}
 }
-
-/*func DoStream(i Inlet, o Outlet) {
-	go transmit(i, o)
-}*/

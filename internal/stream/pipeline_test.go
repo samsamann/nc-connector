@@ -2,6 +2,9 @@ package stream
 
 import (
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -23,15 +26,19 @@ func (s stubConsumer) In() chan<- SyncItem {
 }
 
 type item struct {
-	data int
+	data string
+}
+
+func (i item) Path() string {
+	return ""
 }
 
 func (i item) Attributes() Properties {
 	return make(Properties)
 }
 
-func (i item) Data() interface{} {
-	return i.data
+func (i item) Data() io.Reader {
+	return strings.NewReader(i.data)
 }
 
 type stubProducer struct{}
@@ -41,7 +48,7 @@ func (s stubProducer) Out() <-chan SyncItem {
 	go func() {
 		defer close(c)
 		for i := 0; i < 4; i++ {
-			c <- item{data: i}
+			c <- item{data: strconv.Itoa(i)}
 			time.Sleep(time.Second)
 		}
 
