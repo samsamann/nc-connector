@@ -74,14 +74,20 @@ func (meta *validationMetadata) Map() map[string]string {
 		return make(map[string]string)
 	}
 
-	if m, ok := val.(map[string]string); ok {
-		return m
+	var ok bool
+	var infMap map[interface{}]interface{}
+	if infMap, ok = val.(map[interface{}]interface{}); !ok {
+		meta.configMap.errs = append(
+			meta.configMap.errs,
+			errors.New("value must be a list of key value pairs"),
+		)
+		return make(map[string]string)
 	}
-	meta.configMap.errs = append(
-		meta.configMap.errs,
-		errors.New("value must be a list of key value pairs"),
-	)
-	return make(map[string]string)
+	m := make(map[string]string)
+	for k, v := range infMap {
+		m[k.(string)] = v.(string)
+	}
+	return m
 }
 
 func (meta *validationMetadata) getVal() (interface{}, bool) {
