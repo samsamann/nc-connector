@@ -15,6 +15,7 @@ func init() {
 	operatorRegistry = make(map[string]InitOperatorFunc)
 	operatorRegistry[ItemNotChangedFilterName] = initNotChangedFilter
 	operatorRegistry[pathManipulatorName] = initPathManipulator
+	operatorRegistry[splitOperatorrName] = initSplitOperator
 }
 
 func CreateOperator(opConfig config.StreamElem, c *config.GlobalConfig) (stream.Operator, error) {

@@ -34,7 +34,7 @@ func (p Properties) Get() {
 }
 
 func NewFileSyncItem(path string, props Properties, content []byte) SyncItem {
-	return &file{
+	return &File{
 		mode:    WRITE,
 		path:    path,
 		attrs:   props,
@@ -42,29 +42,32 @@ func NewFileSyncItem(path string, props Properties, content []byte) SyncItem {
 	}
 }
 
-type file struct {
+type File struct {
 	mode    OperationMode
 	path    string
 	attrs   Properties
 	content io.Reader
 }
 
-func (f *file) Mode() OperationMode {
+func (f *File) Mode() OperationMode {
 	return f.mode
 }
-func (f *file) ChangeMode(m OperationMode) {
+func (f *File) ChangeMode(m OperationMode) {
 	f.mode = m
 }
-func (f *file) Path() string {
+func (f *File) Path() string {
 	return f.path
 }
-func (f *file) SetPath(path string) {
+func (f *File) SetPath(path string) {
 	f.path = path
 }
 
-func (f *file) Attributes() Properties {
+func (f *File) Attributes() Properties {
 	return f.attrs
 }
-func (f *file) Data() io.Reader {
+func (f *File) SetAttributes(attrs Properties) {
+	f.attrs = attrs
+}
+func (f *File) Data() io.Reader {
 	return f.content
 }
