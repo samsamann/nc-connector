@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"strings"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/samsamann/nc-connector/internal/stream"
@@ -85,6 +86,9 @@ func (ms mssqlProducer) process(channel chan<- stream.SyncItem, rows *sql.Rows) 
 		m := make(map[string]interface{})
 		for i, colName := range cols {
 			val := columnPointers[i].(*interface{})
+			if str, ok := (*val).(string); ok {
+				*val = strings.Trim(str, " ")
+			}
 			m[colName] = *val
 		}
 		// TODO: ckeck error
