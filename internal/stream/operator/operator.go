@@ -14,6 +14,7 @@ var operatorRegistry map[string]InitOperatorFunc
 func init() {
 	operatorRegistry = make(map[string]InitOperatorFunc)
 	operatorRegistry[ItemNotChangedFilterName] = initNotChangedFilter
+	operatorRegistry[pathManipulatorName] = initPathManipulator
 }
 
 func CreateOperator(opConfig config.StreamElem, c *config.GlobalConfig) (stream.Operator, error) {

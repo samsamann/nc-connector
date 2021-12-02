@@ -39,6 +39,8 @@ func (i item) Path() string {
 	return ""
 }
 
+func (i item) SetPath(path string) {}
+
 func (i item) Attributes() Properties {
 	return make(Properties)
 }

@@ -18,6 +18,7 @@ type SyncItem interface {
 	Mode() OperationMode
 	ChangeMode(OperationMode)
 	Path() string
+	SetPath(string)
 	Attributes() Properties
 	Data() io.Reader
 }
@@ -57,6 +58,10 @@ func (f *file) ChangeMode(m OperationMode) {
 func (f *file) Path() string {
 	return f.path
 }
+func (f *file) SetPath(path string) {
+	f.path = path
+}
+
 func (f *file) Attributes() Properties {
 	return f.attrs
 }
