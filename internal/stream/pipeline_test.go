@@ -29,6 +29,12 @@ type item struct {
 	data string
 }
 
+func (i item) Mode() OperationMode {
+	return NONE
+}
+
+func (i item) ChangeMode(OperationMode) {}
+
 func (i item) Path() string {
 	return ""
 }
@@ -48,7 +54,7 @@ func (s stubProducer) Out() <-chan SyncItem {
 	go func() {
 		defer close(c)
 		for i := 0; i < 4; i++ {
-			c <- item{data: strconv.Itoa(i)}
+			c <- &item{data: strconv.Itoa(i)}
 			time.Sleep(time.Second)
 		}
 
