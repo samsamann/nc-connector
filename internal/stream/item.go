@@ -3,6 +3,7 @@ package stream
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 )
 
 type OperationMode uint8
@@ -21,6 +22,7 @@ type SyncItem interface {
 	SetPath(string)
 	Attributes() Properties
 	Data() io.Reader
+	SetData(io.ReadCloser)
 }
 
 type Properties map[string]interface{}
@@ -70,4 +72,10 @@ func (f *File) SetAttributes(attrs Properties) {
 }
 func (f *File) Data() io.Reader {
 	return f.content
+}
+
+func (f *File) SetData(reader io.ReadCloser) {
+	defer reader.Close()
+	rawBody, _ := ioutil.ReadAll(reader)
+	f.content = bytes.NewReader(rawBody)
 }

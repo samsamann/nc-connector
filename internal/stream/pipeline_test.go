@@ -3,6 +3,7 @@ package stream
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"testing"
@@ -52,12 +53,16 @@ func (i item) Attributes() Properties {
 	return make(Properties)
 }
 
-func (i item) Data() io.Reader {
+func (i *item) Data() io.Reader {
 	return strings.NewReader(i.data)
 }
 
-type stubProducer struct {
+func (i *item) SetData(reader io.ReadCloser) {
+	data, _ := ioutil.ReadAll(reader)
+	i.data = string(data)
 }
+
+type stubProducer struct{}
 
 func (s stubProducer) Out() <-chan SyncItem {
 	c := make(chan SyncItem)

@@ -13,6 +13,7 @@ var operatorRegistry map[string]InitOperatorFunc
 
 func init() {
 	operatorRegistry = make(map[string]InitOperatorFunc)
+	operatorRegistry[apiOperatorName] = initAPIOperator
 	operatorRegistry[pathManipulatorName] = initPathManipulator
 	operatorRegistry[splitOperatorrName] = initSplitOperator
 }
