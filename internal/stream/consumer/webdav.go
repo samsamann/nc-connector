@@ -49,7 +49,11 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 	} else {
 		go func() {
 			for file := range channel {
-				c.WriteStream(file.Path(), file.Data(), 0)
+				if file.Mode() == stream.WRITE {
+					c.WriteStream(file.Path(), file.Data(), 0)
+				} else if file.Mode() == stream.DELETE {
+					c.Remove(file.Path())
+				}
 			}
 			c = nil
 		}()
