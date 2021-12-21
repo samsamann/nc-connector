@@ -5,6 +5,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/samsamann/nc-connector/internal/config"
 	"github.com/samsamann/nc-connector/internal/stream"
 	"github.com/samsamann/nc-connector/internal/stream/util"
 )
@@ -15,7 +16,7 @@ const (
 	pathAppendOpCName = "append"
 )
 
-func initPathManipulator(config map[string]interface{}) (stream.Operator, error) {
+func initPathManipulator(global *config.GlobalConfig, config map[string]interface{}) (stream.Operator, error) {
 	cMap := util.NewConfigMap(config)
 	appendTemp := cMap.Get(pathAppendOpCName).Required().String()
 	if err := cMap.Error(); err != nil {
