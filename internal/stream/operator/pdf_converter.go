@@ -13,9 +13,9 @@ import (
 	"github.com/samsamann/nc-connector/internal/stream"
 )
 
-const apiOperatorName = "api"
+const apiOperatorName = "to-pdf-converter-api"
 
-func initAPIOperator(globalConfig *config.GlobalConfig, opConfig map[string]interface{}) (stream.Operator, error) {
+func initToPDFAPIOperator(globalConfig *config.GlobalConfig, opConfig map[string]interface{}) (stream.Operator, error) {
 	/*c, err := processConfig(util.NewConfigMap(config))
 	if err != nil {
 		return nil, err

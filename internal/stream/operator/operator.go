@@ -13,9 +13,9 @@ var operatorRegistry map[string]InitOperatorFunc
 
 func init() {
 	operatorRegistry = make(map[string]InitOperatorFunc)
-	operatorRegistry[apiOperatorName] = initAPIOperator
 	operatorRegistry[pathManipulatorName] = initPathManipulator
 	operatorRegistry[splitOperatorrName] = initSplitOperator
+	operatorRegistry[apiOperatorName] = initToPDFAPIOperator
 }
 
 func CreateOperator(opConfig config.StreamElem, c *config.GlobalConfig) (stream.Operator, error) {
