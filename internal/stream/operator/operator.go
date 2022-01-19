@@ -13,7 +13,6 @@ var operatorRegistry map[string]InitOperatorFunc
 
 func init() {
 	operatorRegistry = make(map[string]InitOperatorFunc)
-	operatorRegistry[ItemNotChangedFilterName] = initNotChangedFilter
 	operatorRegistry[pathManipulatorName] = initPathManipulator
 	operatorRegistry[splitOperatorrName] = initSplitOperator
 }

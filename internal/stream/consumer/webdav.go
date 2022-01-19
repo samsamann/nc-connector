@@ -6,6 +6,7 @@ import (
 	"github.com/samsamann/nc-connector/internal/config"
 	"github.com/samsamann/nc-connector/internal/stream"
 	"github.com/samsamann/nc-connector/internal/stream/util"
+	"github.com/samsamann/nc-connector/pkg/sync"
 	"github.com/studio-b12/gowebdav"
 )
 
@@ -57,13 +58,16 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 			defer func() {
 				w.waitChan <- nil
 			}()
+			m, _ := sync.NewInMemoryManager(sync.NewJsonFileLoader(w.config.cachePath), c)
 			for file := range channel {
 				if file.Mode() == stream.WRITE {
-					c.WriteStream(file.Path(), file.Data(), 0)
+					execWriteOperation(file, c, m)
+
 				} else if file.Mode() == stream.DELETE {
-					c.Remove(file.Path())
+					execDeleteOperation(file, c, m)
 				}
 			}
+			m.Save()
 			c = nil
 		}()
 	}
@@ -73,6 +77,28 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 func (w webdavConsumer) Wait() <-chan interface{} {
 	return w.waitChan
 }
+
+func execWriteOperation(file stream.SyncItem, client *gowebdav.Client, manager sync.Manager) {
+	if manager.IsNewer(file) {
+		err := client.WriteStream(file.Path(), file.Data(), 0)
+		if err == nil {
+			fileInfo, err := client.Stat(file.Path())
+			if err != nil {
+				return
+			}
+			fi := fileInfo.(*gowebdav.File)
+			manager.Add(file.Path(), fi.ETag(), fi.ModTime())
+		}
+	}
+}
+
+func execDeleteOperation(file stream.SyncItem, client *gowebdav.Client, manager sync.Manager) {
+	err := client.Remove(file.Path())
+	if err == nil {
+		manager.Delete(file)
+	}
+}
+
 type webdavConfig struct {
 	connURL   *url.URL
 	username  string
