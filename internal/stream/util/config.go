@@ -33,6 +33,7 @@ type ConfigValidator interface {
 	String() string
 	StringWithDefault(string) string
 	Map() map[string]string
+	Slice() []string
 }
 
 type validationMetadata struct {
@@ -88,6 +89,28 @@ func (meta *validationMetadata) Map() map[string]string {
 		m[k.(string)] = v.(string)
 	}
 	return m
+}
+
+func (meta *validationMetadata) Slice() []string {
+	val, hasErr := meta.getVal()
+	if hasErr || val == nil {
+		return make([]string, 0)
+	}
+
+	var ok bool
+	var infSlice []interface{}
+	if infSlice, ok = val.([]interface{}); !ok {
+		meta.configMap.errs = append(
+			meta.configMap.errs,
+			errors.New("value must be a list"),
+		)
+		return make([]string, 0)
+	}
+	s := make([]string, 0)
+	for _, v := range infSlice {
+		s = append(s, v.(string))
+	}
+	return s
 }
 
 func (meta *validationMetadata) getVal() (interface{}, bool) {
