@@ -24,6 +24,7 @@ type Operator interface {
 
 type Consumer interface {
 	Inlet
+	Wait() <-chan interface{}
 }
 
 type Flow interface {

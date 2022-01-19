@@ -52,19 +52,11 @@ func (p *pipeline) Start() {
 }
 
 func execPipeline(p Producer, ops []Operator, c Consumer) {
-	var wg sync.WaitGroup
-	wg.Add(len(ops) + 1)
-
-	exec := func(i Inlet, o Outlet) {
-		defer wg.Done()
-		transmit(i, o)
-	}
-
 	var outlet Outlet = p
 	for _, operator := range ops {
-		go exec(operator, outlet)
+		go transmit(operator, outlet)
 		outlet = operator
 	}
-	go exec(c, outlet)
-	wg.Wait()
+	go transmit(c, outlet)
+	<-c.Wait()
 }

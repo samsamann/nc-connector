@@ -26,11 +26,12 @@ func initWebdavConsumer(config map[string]interface{}) (stream.Consumer, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &webdavConsumer{config: c}, nil
+	return &webdavConsumer{config: c, waitChan: make(chan interface{})}, nil
 }
 
 type webdavConsumer struct {
-	config webdavConfig
+	config   webdavConfig
+	waitChan chan interface{}
 }
 
 func (w webdavConsumer) In() chan<- stream.SyncItem {
@@ -43,11 +44,17 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 	)
 	if err := c.Connect(); err != nil {
 		go func() {
+			defer func() {
+				w.waitChan <- nil
+			}()
 			for range channel {
 			}
 		}()
 	} else {
 		go func() {
+			defer func() {
+				w.waitChan <- nil
+			}()
 			for file := range channel {
 				if file.Mode() == stream.WRITE {
 					c.WriteStream(file.Path(), file.Data(), 0)
@@ -61,6 +68,9 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 	return channel
 }
 
+func (w webdavConsumer) Wait() <-chan interface{} {
+	return w.waitChan
+}
 type webdavConfig struct {
 	connURL  *url.URL
 	username string

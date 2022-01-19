@@ -9,7 +9,9 @@ import (
 	"time"
 )
 
-type stubConsumer struct{}
+type stubConsumer struct {
+	waitChan chan interface{}
+}
 
 func (s stubConsumer) In() chan<- SyncItem {
 	c := make(chan SyncItem)
@@ -21,8 +23,13 @@ func (s stubConsumer) In() chan<- SyncItem {
 				break
 			}
 		}
+		s.waitChan <- nil
 	}()
 	return c
+}
+
+func (s stubConsumer) Wait() <-chan interface{} {
+	return s.waitChan
 }
 
 type item struct {
@@ -49,7 +56,8 @@ func (i item) Data() io.Reader {
 	return strings.NewReader(i.data)
 }
 
-type stubProducer struct{}
+type stubProducer struct {
+}
 
 func (s stubProducer) Out() <-chan SyncItem {
 	c := make(chan SyncItem)
@@ -65,6 +73,6 @@ func (s stubProducer) Out() <-chan SyncItem {
 }
 
 func TestPipelineWithProducerAndConsumer(t *testing.T) {
-	pip := NewStreamWithoutMiddleware(&stubProducer{}, &stubConsumer{})
+	pip := NewStreamWithoutMiddleware(&stubProducer{}, &stubConsumer{waitChan: make(chan interface{})})
 	pip.Start()
 }
