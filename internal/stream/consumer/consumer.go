@@ -3,10 +3,11 @@ package consumer
 import (
 	"fmt"
 
+	"github.com/samsamann/nc-connector/internal/config"
 	"github.com/samsamann/nc-connector/internal/stream"
 )
 
-type InitConsumerFunc func(map[string]interface{}) (stream.Consumer, error)
+type InitConsumerFunc func(*config.GlobalConfig, map[string]interface{}) (stream.Consumer, error)
 
 var consumerRegistry map[string]InitConsumerFunc
 
@@ -16,9 +17,10 @@ func init() {
 	consumerRegistry[webdavConsumerName] = initWebdavConsumer
 }
 
-func CreateConsumer(name string, config map[string]interface{}) (stream.Consumer, error) {
+func CreateConsumer(opConfig config.StreamElem, c *config.GlobalConfig) (stream.Consumer, error) {
+	name := opConfig.Name
 	if f, ok := consumerRegistry[name]; ok {
-		return f(config)
+		return f(c, opConfig.Config)
 	}
 	return nil, fmt.Errorf("no consumer found with name %q", name)
 }

@@ -3,6 +3,7 @@ package consumer
 import (
 	"net/url"
 
+	"github.com/samsamann/nc-connector/internal/config"
 	"github.com/samsamann/nc-connector/internal/stream"
 	"github.com/samsamann/nc-connector/internal/stream/util"
 	"github.com/studio-b12/gowebdav"
@@ -19,10 +20,11 @@ const (
 	webdavPathCName     = "basePath"
 	webdavUsernameCName = "username"
 	webdavPasswordCName = "password"
+	webdavCachePath     = "cachePath"
 )
 
-func initWebdavConsumer(config map[string]interface{}) (stream.Consumer, error) {
-	c, err := processConfig(util.NewConfigMap(config))
+func initWebdavConsumer(global *config.GlobalConfig, opConfig map[string]interface{}) (stream.Consumer, error) {
+	c, err := processConfig(global.NCClient, opConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -72,30 +74,33 @@ func (w webdavConsumer) Wait() <-chan interface{} {
 	return w.waitChan
 }
 type webdavConfig struct {
-	connURL  *url.URL
-	username string
-	password string
+	connURL   *url.URL
+	username  string
+	password  string
+	cachePath string
 }
 
-func processConfig(config *util.ConfigMap) (webdavConfig, error) {
-	scheme := config.Get(webdavSchemeCName).StringWithDefault(webdavDefaultScheme)
-	host := config.Get(webdavHostCName).Required().String()
+func processConfig(config config.NCClientConfig, opConfig map[string]interface{}) (webdavConfig, error) {
+	configMap := util.NewConfigMap(opConfig)
+	cachePath := configMap.Get(webdavCachePath).String()
+	/*host := config.Get(webdavHostCName).Required().String()
 	path := config.Get(webdavPathCName).Required().String()
 	username := config.Get(webdavUsernameCName).String()
 	password := config.Get(webdavPasswordCName).String()
 	if err := config.Error(); err != nil {
 		return webdavConfig{}, err
-	}
+	}*/
 
 	u := &url.URL{
-		Scheme: scheme,
-		Host:   host,
-		Path:   path,
+		Scheme: webdavDefaultScheme,
+		Host:   config.Host,
+		Path:   config.BasePath,
 	}
 
 	return webdavConfig{
-		connURL:  u,
-		username: username,
-		password: password,
+		connURL:   u,
+		username:  config.Username,
+		password:  config.Password,
+		cachePath: cachePath,
 	}, nil
 }
