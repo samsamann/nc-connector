@@ -1,12 +1,16 @@
 package sync
 
 import (
+	"time"
+
 	"github.com/samsamann/nc-connector/internal/stream"
 	"github.com/studio-b12/gowebdav"
 )
 
 type Manager interface {
 	IsNewer(stream.SyncItem) bool
+	Add(string, string, time.Time)
+	Delete(stream.SyncItem)
 	Save() error
 }
 
@@ -34,20 +38,25 @@ func (c memManager) Save() error {
 }
 
 func (c memManager) IsNewer(item stream.SyncItem) bool {
-	entity := c.data.Get(item.Path())
-	if entity != nil {
-		fileInfo, err := c.client.Stat(item.Path())
-		if err == nil {
-			switch fi := fileInfo.(type) {
-			case *gowebdav.File:
-				if fi.ETag() == entity.eTag() ||
-					fi.ModTime().Before(entity.modifiedDate()) {
-					entity.markAsDurable()
-					return false
-				}
-				c.data.Add(item.Path(), convert(fi.Name(), fi.ETag(), fi.ModTime()))
-			}
-		}
+	fileInfo, err := c.client.Stat(item.Path())
+	if err != nil {
+		return true
 	}
+	fi := fileInfo.(*gowebdav.File)
+	entity := c.data.Get(item.Path())
+	if entity != nil && (fi.ETag() == entity.eTag() &&
+		fi.ModTime().Equal(entity.modifiedDate())) {
+		entity.markAsDurable()
+		return false
+	}
+
 	return true
+}
+
+func (c memManager) Add(path, etag string, modDate time.Time) {
+	c.data.Add(path, convert(path, etag, modDate))
+}
+
+func (c memManager) Delete(item stream.SyncItem) {
+	c.data.Delete(item.Path())
 }

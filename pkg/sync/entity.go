@@ -62,6 +62,17 @@ func (d *dirEntry) Add(path string, item Item) {
 	extendStorageTree(d, splitPath(path), item)
 }
 
+func (d *dirEntry) Delete(path string) {
+	pathParts := splitPath(path)
+	if len(pathParts) > 1 {
+		if sub, ok := d.dirs[pathParts[0]]; ok {
+			sub.Delete(strings.Join(pathParts[1:], "/"))
+		}
+	} else {
+		delete(d.files, pathParts[0])
+	}
+}
+
 func (d *dirEntry) remove() []Item {
 	removedItems := make([]Item, 0)
 	for name, dir := range d.dirs {
