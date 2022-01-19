@@ -22,10 +22,7 @@ type SearchableStorage interface {
 func extendStorageTree(current *dirEntry, pathParts []string, item Item) {
 	if len(pathParts) == 1 {
 		item.setParent(current)
-
-		if _, ok := current.files[item.name()]; !ok {
 		current.files[item.name()] = item
-		}
 		return
 	}
 	currentPathSeg := pathParts[0]
