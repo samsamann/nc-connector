@@ -16,7 +16,7 @@ type SearchableStorage interface {
 	Get(string) Item
 	Add(string, Item)
 	Delete(string)
-	remove() []Item
+	removable() []Entry
 }
 
 func extendStorageTree(current *dirEntry, pathParts []string, item Item) {

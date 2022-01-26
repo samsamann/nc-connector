@@ -11,6 +11,7 @@ type Manager interface {
 	IsNewer(stream.SyncItem) bool
 	Add(string, string, time.Time)
 	Delete(stream.SyncItem)
+	RemovableItems() []stream.SyncItem
 	Save() error
 }
 
@@ -59,4 +60,14 @@ func (c memManager) Add(path, etag string, modDate time.Time) {
 
 func (c memManager) Delete(item stream.SyncItem) {
 	c.data.Delete(item.Path())
+}
+
+func (c memManager) RemovableItems() []stream.SyncItem {
+	items := make([]stream.SyncItem, 0)
+	for _, e := range c.data.removable() {
+		item := stream.NewFileSyncItem(e.path(), make(stream.Properties), nil)
+		item.ChangeMode(stream.DELETE)
+		items = append(items, item)
+	}
+	return items
 }

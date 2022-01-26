@@ -67,6 +67,10 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 					execDeleteOperation(file, c, m)
 				}
 			}
+
+			for _, file := range m.RemovableItems() {
+				execDeleteOperation(file, c, m)
+			}
 			m.Save()
 			c = nil
 		}()

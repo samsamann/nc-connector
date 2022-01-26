@@ -14,7 +14,7 @@ type Entry struct {
 
 func (e *Entry) path() string {
 	if e.parent == nil {
-		return fmt.Sprintf("/%s", e.Name)
+		return ""
 	}
 	return fmt.Sprintf("%s/%s", e.parent.path(), e.Name)
 }
@@ -34,7 +34,7 @@ func newDirEntry(parent *dirEntry, name string) *dirEntry {
 }
 
 func (d *dirEntry) isRemovable() bool {
-	return d.Entry.removable
+	return len(d.dirs) == 0 && len(d.files) == 0
 }
 
 func (d *dirEntry) markAsDurable() {
@@ -73,22 +73,25 @@ func (d *dirEntry) Delete(path string) {
 	}
 }
 
-func (d *dirEntry) remove() []Item {
-	removedItems := make([]Item, 0)
-	for name, dir := range d.dirs {
-		removedItems = append(removedItems, dir.remove()...)
+func (d *dirEntry) removable() []Entry {
+	removedItems := make([]Entry, 0)
+	for _, dir := range d.dirs {
+		removableSubItems := dir.removable()
 		if dir.isRemovable() {
-			removedItems = append(removedItems, newFileEntry(""))
-			delete(d.dirs, name)
+			removedItems = append(removedItems, *dir.Entry)
+			delete(d.dirs, dir.Name)
+		} else {
+			// Add removable sub-items only if current directory contains other
+			// non-removable items otherwise remove entire directory
+			removedItems = append(removedItems, removableSubItems...)
 		}
 	}
-	for name, file := range d.files {
-		if file.isRemovable() {
-			removedItems = append(removedItems, file)
-			delete(d.files, name)
+	for _, file := range d.files {
+		if f, ok := file.(*fileEntry); ok && file.isRemovable() {
+			removedItems = append(removedItems, *f.Entry)
+			delete(d.files, f.Name)
 		}
 	}
-	d.markAsDurable()
 
 	return removedItems
 }
