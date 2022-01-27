@@ -1,7 +1,10 @@
 package consumer
 
 import (
+	"context"
+	"fmt"
 	"net/url"
+	wait "sync"
 
 	"github.com/samsamann/nc-connector/internal/config"
 	"github.com/samsamann/nc-connector/internal/stream"
@@ -59,14 +62,13 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 				w.waitChan <- nil
 			}()
 			m, _ := sync.NewInMemoryManager(sync.NewJsonFileLoader(w.config.cachePath), c)
-			for file := range channel {
-				if file.Mode() == stream.WRITE {
-					execWriteOperation(file, c, m)
-
-				} else if file.Mode() == stream.DELETE {
-					execDeleteOperation(file, c, m)
-				}
+			ctx := context.TODO()
+			var wg wait.WaitGroup
+			for i := 0; i < 4; i++ {
+				wg.Add(1)
+				go worker(ctx, &wg, channel, c, m)
 			}
+			wg.Wait()
 
 			for _, file := range m.RemovableItems() {
 				execDeleteOperation(file, c, m)
@@ -80,6 +82,27 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 
 func (w webdavConsumer) Wait() <-chan interface{} {
 	return w.waitChan
+}
+
+func worker(ctx context.Context, wg *wait.WaitGroup, data <-chan stream.SyncItem, c *gowebdav.Client, m sync.Manager) {
+	defer wg.Done()
+	for {
+		select {
+		case file, ok := <-data:
+			if !ok {
+				return
+			}
+			if file.Mode() == stream.WRITE {
+				execWriteOperation(file, c, m)
+
+			} else if file.Mode() == stream.DELETE {
+				execDeleteOperation(file, c, m)
+			}
+		case <-ctx.Done():
+			fmt.Printf("cancelled worker. Error detail: %v\n", ctx.Err())
+			return
+		}
+	}
 }
 
 func execWriteOperation(file stream.SyncItem, client *gowebdav.Client, manager sync.Manager) {

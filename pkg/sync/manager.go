@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"sync"
 	"time"
 
 	"github.com/samsamann/nc-connector/internal/stream"
@@ -16,6 +17,7 @@ type Manager interface {
 }
 
 type memManager struct {
+	mu     sync.Mutex
 	writer writer
 	client *gowebdav.Client
 	data   SearchableStorage
@@ -34,37 +36,45 @@ func NewInMemoryManager(loader Loader, client *gowebdav.Client) (Manager, error)
 	return manager, nil
 }
 
-func (c memManager) Save() error {
-	return c.writer.Unload(c.data)
+func (m *memManager) Save() error {
+	return m.writer.Unload(m.data)
 }
 
-func (c memManager) IsNewer(item stream.SyncItem) bool {
-	fileInfo, err := c.client.Stat(item.Path())
+func (m *memManager) IsNewer(item stream.SyncItem) bool {
+	fileInfo, err := m.client.Stat(item.Path())
 	if err != nil {
 		return true
 	}
 	fi := fileInfo.(*gowebdav.File)
-	entity := c.data.Get(item.Path())
+	entity := m.data.Get(item.Path())
 	if entity != nil && (fi.ETag() == entity.eTag() &&
 		fi.ModTime().Equal(entity.modifiedDate())) {
+		m.mu.Lock()
 		entity.markAsDurable()
+		m.mu.Unlock()
 		return false
 	}
 
 	return true
 }
 
-func (c memManager) Add(path, etag string, modDate time.Time) {
-	c.data.Add(path, convert(path, etag, modDate))
+func (m *memManager) Add(path, etag string, modDate time.Time) {
+	m.mu.Lock()
+	m.data.Add(path, convert(path, etag, modDate))
+	m.mu.Unlock()
 }
 
-func (c memManager) Delete(item stream.SyncItem) {
-	c.data.Delete(item.Path())
+func (m *memManager) Delete(item stream.SyncItem) {
+	m.mu.Lock()
+	m.data.Delete(item.Path())
+	m.mu.Unlock()
 }
 
-func (c memManager) RemovableItems() []stream.SyncItem {
+func (m *memManager) RemovableItems() []stream.SyncItem {
+	defer m.mu.Unlock()
+	m.mu.Lock()
 	items := make([]stream.SyncItem, 0)
-	for _, e := range c.data.removable() {
+	for _, e := range m.data.removable() {
 		item := stream.NewFileSyncItem(e.path(), make(stream.Properties), nil)
 		item.ChangeMode(stream.DELETE)
 		items = append(items, item)
