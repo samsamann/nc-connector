@@ -14,6 +14,7 @@ var operatorRegistry map[string]InitOperatorFunc
 func init() {
 	operatorRegistry = make(map[string]InitOperatorFunc)
 	operatorRegistry[pathManipulatorName] = initPathManipulator
+	operatorRegistry[renameOperatorName] = initRenameOperator
 	operatorRegistry[splitOperatorrName] = initSplitOperator
 	operatorRegistry[apiOperatorName] = initToPDFAPIOperator
 }
