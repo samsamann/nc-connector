@@ -30,6 +30,7 @@ func (m *ConfigMap) Error() error {
 
 type ConfigValidator interface {
 	Required() ConfigValidator
+	IntWithDefault(int) int
 	String() string
 	StringWithDefault(string) string
 	Map() map[string]string
@@ -45,6 +46,29 @@ type validationMetadata struct {
 func (meta *validationMetadata) Required() ConfigValidator {
 	meta.required = true
 	return meta
+}
+
+func (meta *validationMetadata) Int() int {
+	val, hasErr := meta.getVal()
+	if hasErr {
+		return 0
+	}
+
+	if i, ok := val.(int); ok {
+		return i
+	}
+	meta.configMap.errs =
+		append(meta.configMap.errs, errors.New("value must be an integer"))
+	return 0
+}
+
+func (meta *validationMetadata) IntWithDefault(i int) int {
+	meta.required = false
+	_, hasErr := meta.getVal()
+	if hasErr {
+		return i
+	}
+	return meta.Int()
 }
 
 func (meta *validationMetadata) String() string {

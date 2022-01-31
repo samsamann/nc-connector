@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"runtime"
 	wait "sync"
 
 	"github.com/samsamann/nc-connector/internal/config"
@@ -24,6 +25,7 @@ const (
 	webdavPathCName     = "basePath"
 	webdavUsernameCName = "username"
 	webdavPasswordCName = "password"
+	webdavWorkers       = "workers"
 	webdavCachePath     = "cachePath"
 )
 
@@ -64,15 +66,24 @@ func (w webdavConsumer) In() chan<- stream.SyncItem {
 			m, _ := sync.NewInMemoryManager(sync.NewJsonFileLoader(w.config.cachePath), c)
 			ctx := context.TODO()
 			var wg wait.WaitGroup
-			for i := 0; i < 4; i++ {
+			for i := 0; i < w.config.workers; i++ {
 				wg.Add(1)
 				go worker(ctx, &wg, channel, c, m)
 			}
 			wg.Wait()
 
-			for _, file := range m.RemovableItems() {
-				execDeleteOperation(file, c, m)
+			removeChan := make(chan stream.SyncItem)
+			go func() {
+				for _, f := range m.RemovableItems() {
+					removeChan <- f
+				}
+				close(removeChan)
+			}()
+			for i := 0; i < w.config.workers; i++ {
+				wg.Add(1)
+				go worker(ctx, &wg, removeChan, c, m)
 			}
+			wg.Wait()
 			m.Save()
 			c = nil
 		}()
@@ -131,11 +142,13 @@ type webdavConfig struct {
 	username  string
 	password  string
 	cachePath string
+	workers   int
 }
 
 func processConfig(config config.NCClientConfig, opConfig map[string]interface{}) (webdavConfig, error) {
 	configMap := util.NewConfigMap(opConfig)
 	cachePath := configMap.Get(webdavCachePath).String()
+	workers := configMap.Get(webdavWorkers).IntWithDefault(runtime.NumCPU() * 2)
 	/*host := config.Get(webdavHostCName).Required().String()
 	path := config.Get(webdavPathCName).Required().String()
 	username := config.Get(webdavUsernameCName).String()
@@ -155,5 +168,6 @@ func processConfig(config config.NCClientConfig, opConfig map[string]interface{}
 		username:  config.Username,
 		password:  config.Password,
 		cachePath: cachePath,
+		workers:   workers,
 	}, nil
 }
