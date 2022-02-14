@@ -35,6 +35,7 @@ type Config struct {
 // GlobalConfig defines global variables that are used everywhere.
 type GlobalConfig struct {
 	NCClient NCClientConfig `yaml:"ncClient"`
+	Logger   LoggerConfig   `yaml:"logger"`
 }
 
 type NCClientConfig struct {
@@ -42,6 +43,11 @@ type NCClientConfig struct {
 	BasePath string `yaml:"basePath"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
+}
+
+type LoggerConfig struct {
+	LogLevel string `yaml:"level"`
+	LogPath  string `yaml:"path"`
 }
 
 type PipelineConfig struct {

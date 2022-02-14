@@ -1,6 +1,10 @@
 package stream
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/sirupsen/logrus"
+)
 
 type dest struct {
 	prevFlow Flow
@@ -33,7 +37,7 @@ func newPipeline(dest *dest) Pipeline {
 	}
 }
 
-func (p *pipeline) Start() {
+func (p *pipeline) Start(logger *logrus.Logger) {
 	p.m.Lock()
 	defer p.m.Unlock()
 
@@ -48,6 +52,7 @@ func (p *pipeline) Start() {
 	} else {
 		return
 	}
+	_ = newContext(logger)
 	execPipeline(producer, operators, consumer)
 }
 

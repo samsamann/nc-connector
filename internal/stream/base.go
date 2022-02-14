@@ -1,5 +1,7 @@
 package stream
 
+import "github.com/sirupsen/logrus"
+
 type linker interface {
 	prev() linker
 	element() interface{}
@@ -35,5 +37,5 @@ type Flow interface {
 
 type Pipeline interface {
 	linker
-	Start()
+	Start(*logrus.Logger)
 }

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type stubConsumer struct {
@@ -79,5 +81,5 @@ func (s stubProducer) Out() <-chan SyncItem {
 
 func TestPipelineWithProducerAndConsumer(t *testing.T) {
 	pip := NewStreamWithoutMiddleware(&stubProducer{}, &stubConsumer{waitChan: make(chan interface{})})
-	pip.Start()
+	pip.Start(logrus.New())
 }
