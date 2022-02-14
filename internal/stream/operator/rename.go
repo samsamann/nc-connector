@@ -45,11 +45,11 @@ func newRenameOperator(t *template.Template) *renameOperator {
 	}
 }
 
-func (ms renameOperator) In() chan<- stream.SyncItem {
+func (ms renameOperator) In(ctx stream.Context) chan<- stream.SyncItem {
 	return ms.channel
 }
 
-func (ms renameOperator) Out() <-chan stream.SyncItem {
+func (ms renameOperator) Out(ctx stream.Context) <-chan stream.SyncItem {
 	channel := make(chan stream.SyncItem)
 	go func() {
 		defer close(channel)

@@ -52,16 +52,18 @@ func (p *pipeline) Start(logger *logrus.Logger) {
 	} else {
 		return
 	}
-	_ = newContext(logger)
-	execPipeline(producer, operators, consumer)
+	ctx := newContext(logger)
+	ctx.Info("Pipeline start")
+	execPipeline(ctx, producer, operators, consumer)
+	ctx.Info("Pipeline end")
 }
 
-func execPipeline(p Producer, ops []Operator, c Consumer) {
+func execPipeline(ctx Context, p Producer, ops []Operator, c Consumer) {
 	var outlet Outlet = p
 	for _, operator := range ops {
-		go transmit(operator, outlet)
+		go transmit(ctx, operator, outlet)
 		outlet = operator
 	}
-	go transmit(c, outlet)
+	go transmit(ctx, c, outlet)
 	<-c.Wait()
 }

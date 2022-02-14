@@ -42,7 +42,7 @@ type webdavConsumer struct {
 	waitChan chan interface{}
 }
 
-func (w webdavConsumer) In() chan<- stream.SyncItem {
+func (w webdavConsumer) In(ctx stream.Context) chan<- stream.SyncItem {
 	channel := make(chan stream.SyncItem)
 
 	c := gowebdav.NewClient(

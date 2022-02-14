@@ -17,7 +17,7 @@ type stubConsumer struct {
 	waitChan chan interface{}
 }
 
-func (f stubConsumer) In() chan<- stream.SyncItem {
+func (f stubConsumer) In(ctx stream.Context) chan<- stream.SyncItem {
 	channel := make(chan stream.SyncItem)
 	go func() {
 		for range channel {

@@ -50,7 +50,7 @@ func newMssqlProducer(c mssqlConfig) stream.Producer {
 	return p
 }
 
-func (ms mssqlProducer) Out() <-chan stream.SyncItem {
+func (ms mssqlProducer) Out(ctx stream.Context) <-chan stream.SyncItem {
 	channel := make(chan stream.SyncItem)
 
 	//TODO: handle errors

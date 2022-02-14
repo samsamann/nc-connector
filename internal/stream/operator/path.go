@@ -41,11 +41,11 @@ func newPathManipulator(t *template.Template) *pathManipulator {
 	}
 }
 
-func (ms pathManipulator) In() chan<- stream.SyncItem {
+func (ms pathManipulator) In(ctx stream.Context) chan<- stream.SyncItem {
 	return ms.channel
 }
 
-func (ms pathManipulator) Out() <-chan stream.SyncItem {
+func (ms pathManipulator) Out(ctx stream.Context) <-chan stream.SyncItem {
 	channel := make(chan stream.SyncItem)
 	go func() {
 		defer close(channel)

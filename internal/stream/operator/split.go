@@ -43,11 +43,11 @@ func newSplitOperator(attrName, sep, newAttrName string) *splitOperator {
 	}
 }
 
-func (ms splitOperator) In() chan<- stream.SyncItem {
+func (ms splitOperator) In(ctx stream.Context) chan<- stream.SyncItem {
 	return ms.channel
 }
 
-func (ms splitOperator) Out() <-chan stream.SyncItem {
+func (ms splitOperator) Out(ctx stream.Context) <-chan stream.SyncItem {
 	channel := make(chan stream.SyncItem)
 	go func() {
 		defer close(channel)

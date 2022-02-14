@@ -8,11 +8,11 @@ type linker interface {
 }
 
 type Inlet interface {
-	In() chan<- SyncItem
+	In(Context) chan<- SyncItem
 }
 
 type Outlet interface {
-	Out() <-chan SyncItem
+	Out(Context) <-chan SyncItem
 }
 
 type Producer interface {

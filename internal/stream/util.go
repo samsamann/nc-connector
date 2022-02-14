@@ -26,10 +26,10 @@ func getAllOperators(link linker) []Operator {
 	return outlets
 }
 
-func transmit(i Inlet, o Outlet) {
-	inletChan := i.In()
+func transmit(ctx Context, i Inlet, o Outlet) {
+	inletChan := i.In(ctx)
 	defer close(inletChan)
-	for ele := range o.Out() {
+	for ele := range o.Out(ctx) {
 		inletChan <- ele
 	}
 }

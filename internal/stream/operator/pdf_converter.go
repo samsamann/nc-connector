@@ -44,11 +44,11 @@ func newAPIOperator(c apiConfig) stream.Operator {
 	}
 }
 
-func (ao apiOperator) In() chan<- stream.SyncItem {
+func (ao apiOperator) In(ctx stream.Context) chan<- stream.SyncItem {
 	return ao.channel
 }
 
-func (ao apiOperator) Out() <-chan stream.SyncItem {
+func (ao apiOperator) Out(ctx stream.Context) <-chan stream.SyncItem {
 	channel := make(chan stream.SyncItem)
 	go func() {
 		client := &http.Client{}

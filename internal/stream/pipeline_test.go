@@ -16,7 +16,7 @@ type stubConsumer struct {
 	waitChan chan interface{}
 }
 
-func (s stubConsumer) In() chan<- SyncItem {
+func (s stubConsumer) In(ctx Context) chan<- SyncItem {
 	c := make(chan SyncItem)
 	go func() {
 		for {
@@ -66,7 +66,7 @@ func (i *item) SetData(reader io.ReadCloser) {
 
 type stubProducer struct{}
 
-func (s stubProducer) Out() <-chan SyncItem {
+func (s stubProducer) Out(ctx Context) <-chan SyncItem {
 	c := make(chan SyncItem)
 	go func() {
 		defer close(c)
