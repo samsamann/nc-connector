@@ -12,6 +12,7 @@ var producerRegistry map[string]InitProducerFunc
 
 func init() {
 	producerRegistry = make(map[string]InitProducerFunc)
+	producerRegistry[fsProducerName] = initFsProducer
 	producerRegistry[mssqlProducerName] = initMssqlProducer
 }
 

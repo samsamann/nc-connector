@@ -35,6 +35,7 @@ type ConfigValidator interface {
 	StringWithDefault(string) string
 	Map() map[string]string
 	Slice() []string
+	Bool() bool
 }
 
 type validationMetadata struct {
@@ -135,6 +136,20 @@ func (meta *validationMetadata) Slice() []string {
 		s = append(s, v.(string))
 	}
 	return s
+}
+
+func (meta *validationMetadata) Bool() bool {
+	val, hasErr := meta.getVal()
+	if hasErr || val == nil {
+		return false
+	}
+
+	if b, ok := val.(bool); ok {
+		return b
+	}
+	meta.configMap.errs =
+		append(meta.configMap.errs, errors.New("value must be a boolean"))
+	return false
 }
 
 func (meta *validationMetadata) getVal() (interface{}, bool) {
