@@ -27,7 +27,9 @@ func main() {
 		os.Exit(1)
 	}
 	logger := createLogger(c.GlobalConfig.Logger)
-	buildPipeline(c, logger)
+	if pip := buildPipeline(c, logger); pip != nil {
+		pip.Start(logger)
+	}
 }
 
 func parseCliArgs(args []string) (string, error) {
@@ -43,9 +45,9 @@ func parseCliArgs(args []string) (string, error) {
 	return *configPath, nil
 }
 
-func buildPipeline(config *config.Config, logger *logrus.Logger) {
+func buildPipeline(config *config.Config, logger *logrus.Logger) stream.Pipeline {
 	if config == nil {
-		return
+		return nil
 	}
 	// TODO: check config first
 	p, err := producer.CreateProducer(
@@ -53,13 +55,15 @@ func buildPipeline(config *config.Config, logger *logrus.Logger) {
 		config.Pipeline.Producer.Config,
 	)
 	if err != nil {
-		return
+		logger.Error(err)
+		return nil
 	}
 	flow := stream.NewStream(p)
 	for _, m := range config.Pipeline.Middleware {
 		o, err := operator.CreateOperator(m, &config.GlobalConfig)
 		if err != nil {
-			return
+			logger.Error(err)
+			return nil
 		}
 		flow = flow.Via(o)
 	}
@@ -68,9 +72,10 @@ func buildPipeline(config *config.Config, logger *logrus.Logger) {
 		&config.GlobalConfig,
 	)
 	if err != nil {
-		return
+		logger.Error(err)
+		return nil
 	}
-	flow.To(c).Start(logger)
+	return flow.To(c)
 }
 
 func createLogger(logger config.LoggerConfig) *logrus.Logger {
